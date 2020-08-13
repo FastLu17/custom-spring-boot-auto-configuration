@@ -46,3 +46,16 @@ logging:
   level:
     com:
       luxf: DEBUG
+    #   Spring Boot的相关日志
+#    org:
+#      springframework:
+#        boot: DEBUG
+
+# 自定义的@ConfigurationProperties对象、
+custom:
+  mybatis:
+    refresh:
+      enabled: true
+      delay-seconds: 5
+      interval-seconds: 3
+      mapper-suffix: Mapper.xml

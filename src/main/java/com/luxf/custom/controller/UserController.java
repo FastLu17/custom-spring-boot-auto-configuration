@@ -23,7 +23,7 @@ public class UserController {
     @RequestMapping("user/{id}")
     public String selectUserById(@PathVariable int id) {
         User user = userService.selectUserById(id);
-        return user.toString();
+        return user == null ? "NULL" : user.toString();
     }
 
 }

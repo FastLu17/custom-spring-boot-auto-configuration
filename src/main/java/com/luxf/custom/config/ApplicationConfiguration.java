@@ -69,8 +69,16 @@ public class ApplicationConfiguration {
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 // value的序列化方式、
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonRedisSerializer))
+                .entryTtl(Duration.ofSeconds(300))
+                // prefixKeysWith()配置后,会被computePrefixWith()覆盖掉、
+                // .prefixKeysWith("REDIS_CACHE_PREFIX")
+                // cacheName 是@Cacheable系列注解上的 value或cacheNames的值
+                .computePrefixWith(cacheName -> "PREFIX_" + cacheName + "::");
                 // 不缓存null、
-                .disableCachingNullValues();
+                // .disableCachingNullValues();
+        /**
+         * TODO: 下面这样配置不生效、方法内部是创建新的对象,不是调用set方法、
+         */
         cacheConfiguration.prefixKeysWith("REDIS_CACHE");
         cacheConfiguration.computePrefixWith(CacheKeyPrefix.simple());
         cacheConfiguration.entryTtl(Duration.ofSeconds(300));
