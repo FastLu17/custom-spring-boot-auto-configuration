@@ -64,9 +64,7 @@ import java.nio.file.Paths;
         TaskExecutionAutoConfiguration.class, MailSenderAutoConfiguration.class,
         DataSourceTransactionManagerAutoConfiguration.class, AopAutoConfiguration.class,
         MybatisAutoConfiguration.class})
-@ComponentScan(
-        basePackages = {"com.luxf"}
-)
+@ComponentScan(basePackages = {"com.luxf"})
 @MapperScan({"com.luxf"})
 public class CustomApplication extends SpringBootServletInitializer implements WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
 
@@ -139,6 +137,10 @@ public class CustomApplication extends SpringBootServletInitializer implements W
 //         SpringApplication.run(CustomApplication.class, args);
     }
 
+    /**
+     * 自定义内置的Tomcat相关内容、
+     * @param factory
+     */
     @Override
     public void customize(ConfigurableServletWebServerFactory factory) {
         ((TomcatServletWebServerFactory) factory).addContextCustomizers((context) -> {
