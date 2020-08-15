@@ -2,6 +2,7 @@ package com.luxf.custom;
 
 import org.mybatis.spring.annotation.MapperScan;
 import org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration;
+import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
@@ -104,7 +105,8 @@ public class CustomApplication extends SpringBootServletInitializer implements W
      *             try {
      *                 // 允许在上下文子类中对BeanFactory进行后置处理。
      *                 this.postProcessBeanFactory(beanFactory);
-     *                 // 调用在上下文中注册为BeanFactory后置处理器。--> 处理@Confiuration注解和@Import注解相关、
+     *                 // 调用在上下文中注册为BeanFactory的所有后置处理器。--> 来改变bean的定义,包括处理@Confiuration注解和@Import注解等、
+     *                 // 可以实现{@link BeanDefinitionRegistryPostProcessor}接口向容器中动态注册Bean对象、
      *                 this.invokeBeanFactoryPostProcessors(beanFactory);
      *
      *                 // 注册Bean的后置处理器,在Bean创建过程中调用。
