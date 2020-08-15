@@ -25,21 +25,22 @@ import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfigu
 import org.springframework.boot.autoconfigure.web.servlet.*;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.context.ConfigurationWarningsApplicationContextInitializer;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.*;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Set;
 
 /**
  * Spring Boot中的手动Import所需的AutoConfiguration,可以大幅度提高启动性能。取消{@link EnableAutoConfiguration}
@@ -47,6 +48,12 @@ import java.nio.file.Paths;
  * <p>
  * {@link SpringBootServletInitializer}：继承该类,可以将SpringBoot项目打war包(pom.xml中要排除Spring-boot自带的Tomcat)。与手动Import无关、
  * {@link WebServerFactoryCustomizer}：实现该接口,可以自定义Web服务器的内容。与手动Import无关、
+ *
+ * 添加包的扫描路径逻辑在{@link ConfigurationWarningsApplicationContextInitializer.ComponentScanPackageCheck#addComponentScanningPackages(Set, AnnotationMetadata)}
+ * 基本逻辑就是：先判断是否存在{@link ComponentScan}注解,再判断该注解是否有相应属性值,再判断是否需要默认启动类的packageName、
+ *
+ * 在{@link ConfigurationClassParser#doProcessConfigurationClass(ConfigurationClass, ConfigurationClassParser.SourceClass)}方法中,
+ * 会解析 {@link Import,ImportResource,ComponentScan,Bean,PropertySources}等注解、
  *
  * @author 小66
  */
@@ -83,25 +90,40 @@ public class CustomApplication extends SpringBootServletInitializer implements W
      *      3.编程方式：SpringApplication.setBanner(…)使用编程的方式设置banner，使用org.springframework.boot.Banner接口实现printBanner()方法；
      *
      *  TODO: {@link SpringApplication#refreshContext(ConfigurableApplicationContext)} 是核心方法、
-     *  方法内部调用{@link AbstractApplicationContext#refresh()}：详细如下
+     *  方法内部调用{@link AbstractApplicationContext#refresh()}：详细如下 --> 该方法就属于 Spring 的核心方法(Spring Boot基于Spring)、
      *  TODO: 该方法内进行容器初始化Bean的相关操作、
      *  public void refresh() throws BeansException, IllegalStateException {
      *         synchronized(this.startupShutdownMonitor) {
+     *             // 准备此上下文用以进行刷新、
      *             this.prepareRefresh();
+     *             // 让子类刷新内部的BeanFactory。
      *             ConfigurableListableBeanFactory beanFactory = this.obtainFreshBeanFactory();
+     *             // 准备在此上下文中使用的BeanFactory。
      *             this.prepareBeanFactory(beanFactory);
      *
      *             try {
+     *                 // 允许在上下文子类中对BeanFactory进行后置处理。
      *                 this.postProcessBeanFactory(beanFactory);
+     *                 // 调用在上下文中注册为BeanFactory后置处理器。--> 处理@Confiuration注解和@Import注解相关、
      *                 this.invokeBeanFactoryPostProcessors(beanFactory);
+     *
+     *                 // 注册Bean的后置处理器,在Bean创建过程中调用。
+     *                 // 注册所有 BeanPostProcessors，这里会区分是否继承了 PriorityOrdered 和 Ordered
+     *                 // 执行的优先级按照 PriorityOrdered > Ordered > 无
      *                 this.registerBeanPostProcessors(beanFactory);
+     *
+     *                 // 为此上下文初始化消息源。
      *                 this.initMessageSource();
+     *                 // 初始化上下文中的事件机制。
      *                 this.initApplicationEventMulticaster();
-     *                 TODO: 调用子类的onRefresh()、典型的就是{@link ServletWebServerApplicationContext#onRefresh()}、
-     *                      该方法内部调用createWebServer();创建内置的Tomcat、
+     *                 TODO: 调用特殊子类的onRefresh()、典型的就是{@link ServletWebServerApplicationContext#onRefresh()}、
+     *                      该方法内部调用createWebServer();创建内置的Tomcat、 (初始化其他的特殊Bean)
      *                 this.onRefresh();
+     *                 // 检查侦听器bean并注册它们。
      *                 this.registerListeners();
+     *                 // 实例化所有剩余的（non-lazy-init 非延迟初始化）单例Bean。
      *                 this.finishBeanFactoryInitialization(beanFactory);
+     *                 // 发布对应的事件。
      *                 this.finishRefresh();
      *             } catch (BeansException var9) {
      *                 this.destroyBeans();
