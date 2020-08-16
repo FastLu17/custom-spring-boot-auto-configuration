@@ -1,7 +1,6 @@
 package com.luxf.custom.helper;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
@@ -15,7 +14,7 @@ import org.springframework.stereotype.Component;
  * @author 小66
  */
 @Component
-public class ApplicationContextHelper implements ApplicationContextAware, BeanPostProcessor {
+public class ApplicationContextHelper implements ApplicationContextAware {
 
 
     private static ApplicationContext applicationContext;

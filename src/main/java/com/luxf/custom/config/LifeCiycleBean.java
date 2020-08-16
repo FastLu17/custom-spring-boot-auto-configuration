@@ -3,18 +3,21 @@ package com.luxf.custom.config;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.PropertyValues;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
 import org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
 
 /**
  * {@link AbstractAutowireCapableBeanFactory#resolveBeforeInstantiation(String, RootBeanDefinition)}该方法内
- * 会调用{@link InstantiationAwareBeanPostProcessor}接口的2个生命周期方法的实现、
+ * 会调用{@link InstantiationAwareBeanPostProcessor#postProcessBeforeInstantiation(Class, String)}实例化前置方法的实现、
  * <p>
- * {@link AbstractAutowireCapableBeanFactory#initializeBean(String, Object, RootBeanDefinition)}改方法内部会
+ * {@link AbstractAutowireCapableBeanFactory#initializeBean(String, Object, RootBeanDefinition)}该方法内部会
  * 调用{@link BeanPostProcessor}接口的2个生命周期方法、
  * <p>
  * <p>
@@ -29,7 +32,7 @@ import org.springframework.stereotype.Component;
  * @date 2020-08-15 15:17
  **/
 @Component
-public class LifeCiycleBean implements InstantiationAwareBeanPostProcessor, BeanPostProcessor {
+public class LifeCiycleBean implements InstantiationAwareBeanPostProcessor, BeanPostProcessor, InitializingBean, DisposableBean {
 
     /**
      * 1、最先调用beforeInstantiation
@@ -90,5 +93,24 @@ public class LifeCiycleBean implements InstantiationAwareBeanPostProcessor, Bean
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         return bean;
+    }
+
+    /**
+     * {@link InitializingBean}接口的实现、
+     * {@link AbstractAutowireCapableBeanFactory#invokeInitMethods(String, Object, RootBeanDefinition)}该方法内部调用、
+     */
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        // 相当于执行postProcessProperties()后、即实例化对象后的生命周期方法。
+    }
+
+    /**
+     * {@link DisposableBean}接口的实现、
+     * 由{@link ConfigurableApplicationContext#close()}调用
+     */
+    @Override
+    public void destroy() throws Exception {
+        // 对应生命周期的销毁阶段，以ConfigurableApplicationContext#close()方法作为入口。
+        // 实现是通过循环取所有实现了DisposableBean接口的Bean然后调用其destroy()方法。
     }
 }
