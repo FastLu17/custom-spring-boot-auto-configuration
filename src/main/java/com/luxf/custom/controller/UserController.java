@@ -1,8 +1,10 @@
 package com.luxf.custom.controller;
 
+import com.luxf.custom.aware.IAware;
 import com.luxf.custom.aware.IBeanFactoryAware;
 import com.luxf.custom.aware.IEnvironmentAware;
 import com.luxf.custom.config.IProperties;
+import com.luxf.custom.entity.BaseInfo;
 import com.luxf.custom.entity.User;
 import com.luxf.custom.helper.ApplicationContextHelper;
 import com.luxf.custom.service.UserService;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.persistence.Entity;
+import java.lang.reflect.Field;
 
 /**
  * @author 小66
@@ -39,6 +42,10 @@ public class UserController {
         // 默认情况下是DefaultListableBeanFactory实现的BeanFactory接口、
         DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) IBeanFactoryAware.getBeanFactory();
         User bean = beanFactory.getBean(User.class);
+        // 通过ImportBeanDefinitionRegistrar接口注入的Bean、
+        BaseInfo baseInfo = beanFactory.getBean(BaseInfo.class.getName(),BaseInfo.class);
+        // 通过ImportSelector接口注入的Bean、
+        IAware aware = beanFactory.getBean(IAware.class);
         // userBean和iProperties是 通过BeanDefinitionRegistryPostProcessor动态注入到Spring容器中的Bean对象
         User userBean = ApplicationContextHelper.getBean(User.class);
         System.out.println("userBean = " + userBean);

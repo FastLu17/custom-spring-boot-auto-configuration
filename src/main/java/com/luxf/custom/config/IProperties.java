@@ -32,4 +32,9 @@ public class IProperties {
                 "port='" + port + '\'' +
                 '}';
     }
+
+    // 测试Class.forName()和ClassLoader.loadClass()的区别。
+    static {
+        System.out.println("IProperties static block init！");
+    }
 }

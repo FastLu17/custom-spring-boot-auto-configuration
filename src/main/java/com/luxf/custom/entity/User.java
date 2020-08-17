@@ -78,4 +78,9 @@ public class User extends BaseInfo<Integer> implements Serializable {
                 ", modifyTime=" + modifyTime +
                 '}';
     }
+
+    // 测试Class.forName()和ClassLoader.loadClass()的区别。
+    static {
+        System.out.println("User static block init！");
+    }
 }

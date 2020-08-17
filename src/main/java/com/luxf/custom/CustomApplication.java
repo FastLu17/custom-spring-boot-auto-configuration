@@ -1,5 +1,9 @@
 package com.luxf.custom;
 
+import com.luxf.custom.aware.IAware;
+import com.luxf.custom.config.ImportRegistrar;
+import com.luxf.custom.config.ImportSelector;
+import com.luxf.custom.entity.BaseInfo;
 import org.mybatis.spring.annotation.MapperScan;
 import org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -47,6 +51,9 @@ import java.util.Set;
 /**
  * Spring Boot中的手动Import所需的AutoConfiguration,可以大幅度提高启动性能。取消{@link EnableAutoConfiguration}
  * 因为{@link SpringBootApplication}内部具体实现就是通过{@link Import}实现、
+ *
+ * {@link SpringBootApplication}内部的{@link EnableAutoConfiguration}就是通过{@link org.springframework.context.annotation.ImportSelector}接口
+ * 和{@link ImportBeanDefinitionRegistrar}接口实现扫描需要自动配置(注入Spring容器)的类进行相关注册。
  * <p>
  * {@link SpringBootServletInitializer}：继承该类,可以将SpringBoot项目打war包(pom.xml中要排除Spring-boot自带的Tomcat)。与手动Import无关、
  * {@link WebServerFactoryCustomizer}：实现该接口,可以自定义Web服务器的内容。与手动Import无关、
@@ -56,6 +63,8 @@ import java.util.Set;
  *
  * 在{@link ConfigurationClassParser#doProcessConfigurationClass(ConfigurationClass, ConfigurationClassParser.SourceClass)}方法中,
  * 会解析 {@link Import,ImportResource,ComponentScan,Bean,PropertySources}等注解、
+ *
+ * 自定义{@link ImportRegistrar}注解来注入指定的Bean对象、
  *
  * @author 小66
  */
@@ -75,6 +84,8 @@ import java.util.Set;
         MybatisAutoConfiguration.class})
 @ComponentScan(basePackages = {"com.luxf"})
 @MapperScan({"com.luxf"})
+@ImportRegistrar({BaseInfo.class})
+@ImportSelector({IAware.class})
 public class CustomApplication extends SpringBootServletInitializer implements WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
 
     /**
