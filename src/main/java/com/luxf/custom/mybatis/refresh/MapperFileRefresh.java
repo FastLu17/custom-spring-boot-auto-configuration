@@ -8,6 +8,7 @@ import org.apache.ibatis.session.SqlSession;
 import org.mybatis.spring.boot.autoconfigure.MybatisProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.NestedIOException;
 import org.springframework.core.io.Resource;
@@ -73,6 +74,14 @@ public class MapperFileRefresh implements Runnable {
 
     @PostConstruct
     public void postConstruct() {
+        /**
+         * Spring Boot从2.1.0版本开始,提供了ThreadPoolTaskExecutor的Bean、是懒加载的Bean
+         * @see TaskExecutionAutoConfiguration
+         */
+        // 懒加载的Bean无法在@PostConstruct时获取到、
+//        ThreadPoolTaskExecutor taskExecutor = ApplicationContextHelper.getBean(
+//                TaskExecutionAutoConfiguration.APPLICATION_TASK_EXECUTOR_BEAN_NAME, ThreadPoolTaskExecutor.class);
+//        taskExecutor.submit(this);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.submit(this);
         executor.shutdown();
