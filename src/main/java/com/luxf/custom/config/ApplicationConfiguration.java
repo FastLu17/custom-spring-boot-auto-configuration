@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.AdviceModeImportSelector;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.CacheKeyPrefix;
@@ -19,15 +20,19 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.time.Duration;
 
 /**
+ * {@link EnableAsync,EnableCaching,EnableTransactionManagement}注解内部都导入了{@link AdviceModeImportSelector}的实现类、
+ *
  * @author 小66
  */
 @Configuration
 @EnableAsync
 @EnableCaching
+@EnableTransactionManagement
 @EnableScheduling
 public class ApplicationConfiguration {
     public ApplicationConfiguration() {
@@ -69,7 +74,7 @@ public class ApplicationConfiguration {
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 // value的序列化方式、
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonRedisSerializer))
-                .entryTtl(Duration.ofSeconds(300))
+                .entryTtl(Duration.ofSeconds(10))
                 // prefixKeysWith()配置后,会被computePrefixWith()覆盖掉、
                 // .prefixKeysWith("REDIS_CACHE_PREFIX")
                 // cacheName 是@Cacheable系列注解上的 value或cacheNames的值

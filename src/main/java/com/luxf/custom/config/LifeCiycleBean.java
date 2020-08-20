@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
  * {@link AbstractAutowireCapableBeanFactory#initializeBean(String, Object, RootBeanDefinition)}该方法内部会
  * 调用{@link BeanPostProcessor}接口的2个生命周期方法、
  * <p>
+ * TODO: {@link InstantiationAwareBeanPostProcessor}接口继承了{@link BeanPostProcessor}接口、如果需要处理全部的生命周期,直接实现{@link InstantiationAwareBeanPostProcessor}即可、
  * <p>
  * Spring Bean的生命周期只有这四个阶段：实例化 -> 属性赋值 -> 初始化 -> 销毁
  * 1、实例化  Instantiation
