@@ -4,10 +4,14 @@ import com.luxf.custom.aware.IAware;
 import com.luxf.custom.config.ImportRegistrar;
 import com.luxf.custom.config.ImportSelector;
 import com.luxf.custom.entity.BaseInfo;
+import org.apache.ibatis.annotations.Mapper;
 import org.mybatis.spring.annotation.MapperScan;
 import org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration;
+import org.springframework.aop.config.AopConfigUtils;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
@@ -61,16 +65,23 @@ import java.util.Set;
  * 添加包的扫描路径逻辑在{@link ConfigurationWarningsApplicationContextInitializer.ComponentScanPackageCheck#addComponentScanningPackages(Set, AnnotationMetadata)}
  * 基本逻辑就是：先判断是否存在{@link ComponentScan}注解,再判断该注解是否有相应属性值,再判断是否需要默认启动类的packageName、
  *
+ * @see BeanDefinitionParser 用于解析各种xml文件中的{@link BeanDefinition}
+ * @see ConfigurationClassParser 用于解析存在{@link Configuration}注解的Class.
+ *
  * 在{@link ConfigurationClassParser#doProcessConfigurationClass(ConfigurationClass, ConfigurationClassParser.SourceClass)}方法中,
  * 会解析 {@link Import,ImportResource,ComponentScan,Bean,PropertySources}等注解、
  *
  * 自定义{@link ImportRegistrar}注解来注入指定的Bean对象、
  *
+ * @see AopAutoConfiguration Aop的自动配置中, 包含了{@link EnableAspectJAutoProxy}注解, 因此不需要再使用{@link EnableAspectJAutoProxy}
+ * 如果配置了多次{@link EnableAspectJAutoProxy},则在{@link AopConfigUtils#registerOrEscalateApcAsRequired(Class, BeanDefinitionRegistry, Object)}方法中校验容器中是否已存在该Bean,是否需要更新EnableAspectJAutoProxy相关的属性。
+ *
  * @author 小66
  */
 // 也可使用@SpringBootConfiguration、该注解内部就是 @Configuration
 @Configuration
-@EnableTransactionManagement
+@EnableTransactionManagement(proxyTargetClass = true)
+@EnableAspectJAutoProxy(exposeProxy = true)
 @Import({ServletWebServerFactoryAutoConfiguration.class, CacheAutoConfiguration.class,
         DispatcherServletAutoConfiguration.class, WebMvcAutoConfiguration.class,
         ErrorMvcAutoConfiguration.class, HttpEncodingAutoConfiguration.class,
@@ -83,7 +94,8 @@ import java.util.Set;
         DataSourceTransactionManagerAutoConfiguration.class, AopAutoConfiguration.class,
         MybatisAutoConfiguration.class})
 @ComponentScan(basePackages = {"com.luxf"})
-@MapperScan({"com.luxf"})
+//@MapperScan(value = {"com.luxf"})// 如果没有指定annotationClass属性,mybatis会在MapperRegistry中注册所有的Interface接口,引发错误。
+@MapperScan(value = {"com.luxf"}, annotationClass = Mapper.class)
 @ImportRegistrar({BaseInfo.class})
 @ImportSelector({IAware.class})
 public class CustomApplication extends SpringBootServletInitializer implements WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
