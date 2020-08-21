@@ -1,21 +1,19 @@
 package com.luxf.custom.aop;
 
+import org.aopalliance.intercept.MethodInterceptor;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.DeclareParents;
-import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.annotation.*;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.PointcutAdvisor;
 import org.springframework.aop.SpringProxy;
 import org.springframework.aop.TargetSource;
+import org.springframework.aop.aspectj.AbstractAspectJAdvice;
 import org.springframework.aop.aspectj.AspectJExpressionPointcut;
 import org.springframework.aop.aspectj.DeclareParentsAdvisor;
-import org.springframework.aop.aspectj.annotation.AbstractAspectJAdvisorFactory;
-import org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator;
-import org.springframework.aop.aspectj.annotation.BeanFactoryAspectJAdvisorsBuilder;
+import org.springframework.aop.aspectj.annotation.*;
 import org.springframework.aop.config.AopConfigUtils;
 import org.springframework.aop.framework.*;
+import org.springframework.aop.framework.adapter.AdvisorAdapter;
 import org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator;
 import org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator;
 import org.springframework.aop.support.AopUtils;
@@ -29,6 +27,7 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.interceptor.BeanFactoryCacheOperationSourceAdvisor;
 import org.springframework.cglib.proxy.Enhancer;
+import org.springframework.cglib.proxy.MethodProxy;
 import org.springframework.context.annotation.*;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.scheduling.annotation.Async;
@@ -38,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
 
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
 
@@ -160,15 +160,17 @@ import java.util.Set;
  * 		}
  *
  *      // specificInterceptors本来就是Advisor的数组, buildAdvisors()主要是添加通用的Advisor, 并将其包装为Advisor、
+ *      // 将拦截器封装为增强器、
  * 		Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
  * 		proxyFactory.addAdvisors(advisors);
  *
  * 	    // TODO: {@link AbstractAutoProxyCreator#postProcessBeforeInstantiation(Class, String)}方法中,会加载自定义的{@link TargetSource}
  * 	    // {@link TargetSource}可以进行自定义、此处默认使用{@link SingletonTargetSource}.
  * 		proxyFactory.setTargetSource(targetSource);
- * 	    // 空实现、可以自定义部分内容.
+ * 	    // 空实现、可以自定义部分内容, 定制代理、
  * 		customizeProxyFactory(proxyFactory);
  *
+ *      // 用来控制代理工厂被配置之后,是否还允许修改通知。默认 false.(被代理后,不允许修改代理的配置)
  * 		proxyFactory.setFrozen(this.freezeProxy);
  * 		if (advisorsPreFiltered()) {
  * 			proxyFactory.setPreFiltered(true);
@@ -176,6 +178,9 @@ import java.util.Set;
  *      // 关于{@link ProxyFactory#getProxy(ClassLoader)}方法的解读
  *      // 1、先调用{@link DefaultAopProxyFactory#createAopProxy(AdvisedSupport)} 创建CGLIB/JDK的{@link AopProxy}对象、
  *      // 2、然后在调用{@link AopProxy#getProxy(ClassLoader)}方法、比如{@link CglibAopProxy#getProxy(ClassLoader)}
+ *
+ *      // TODO：创建代理对象后,调用代理对象的方法时, 比如{@link JdkDynamicAopProxy#invoke(Object, Method, Object[])}就会生效、
+ *      // 而CglibAopProxy主要是利用内部类{@link CglibAopProxy.DynamicAdvisedInterceptor#intercept(Object, Method, Object[], MethodProxy)}的拦截器进行对应的拦截、
  * 		return proxyFactory.getProxy(getProxyClassLoader());
  * 	}
  *
@@ -215,7 +220,7 @@ import java.util.Set;
  *
  * 			enhancer.setStrategy(new ClassLoaderAwareUndeclaredThrowableStrategy(classLoader));
  *
- *          // TODO：完成拦截器的核心地方、
+ *          // TODO：完成拦截器的核心地方、设置拦截器链
  *          // {@link CglibAopProxy#getCallbacks(Class)} 将当前类，注册到{@link CglibAopProxy}多个内部类(拦截器)中.
  * 			Callback[] callbacks = getCallbacks(rootClass);
  * 			Class<?>[] types = new Class<?>[callbacks.length];
@@ -248,6 +253,11 @@ public class IAspectJ {
      * TODO: 在{@link Aspect}的Bean对象中,如果有以"ajc$"开头的字段名,则这个Bean不会起到AOP拦截的作用！
      * <p>
      * {@link BeanFactoryAspectJAdvisorsBuilder#buildAspectJAdvisors()}该方法内会处理{@link Aspect}相关的内容。
+     *
+     * 由 this.advisorFactory.getAdvisors(factory)进入，最终调用至此getAdvice()方法。
+     * {@link ReflectiveAspectJAdvisorFactory#getAdvice(Method, AspectJExpressionPointcut, MetadataAwareAspectInstanceFactory, int, String)}
+     * TODO: 该方法里为{@link Pointcut,Around,Before,After,AfterThrowing,AfterReturning}注解的方法分别创建不同的{@link AbstractAspectJAdvice}实现类的实例对象、
+     * 对于不同的实例,有些是直接实现{@link MethodInterceptor}接口,有些是通过{@link AdvisorAdapter}间接实现{@link MethodInterceptor}接口、
      *
      * @see DeclareParents 如果带有{@link Aspect}注解的Bean对象的field上存在该注解,则会构建一个{@link DeclareParentsAdvisor}。
      * @see AspectJExpressionPointcut 该对象存储着{@link Aspect}相关的 PointCutExpression、

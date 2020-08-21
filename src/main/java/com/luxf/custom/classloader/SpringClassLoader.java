@@ -2,6 +2,11 @@ package com.luxf.custom.classloader;
 
 import com.luxf.custom.config.IProperties;
 import com.luxf.custom.entity.User;
+import org.springframework.context.annotation.LoadTimeWeavingConfiguration;
+import org.springframework.context.annotation.LoadTimeWeavingConfigurer;
+import org.springframework.context.weaving.DefaultContextLoadTimeWeaver;
+import org.springframework.context.weaving.LoadTimeWeaverAware;
+import org.springframework.context.weaving.LoadTimeWeaverAwareProcessor;
 import org.springframework.core.DecoratingClassLoader;
 import org.springframework.core.OverridingClassLoader;
 import org.springframework.instrument.classloading.LoadTimeWeaver;
@@ -11,6 +16,13 @@ import org.springframework.instrument.classloading.LoadTimeWeaver;
  * 主要是{@link OverridingClassLoader,org.springframework.context.support.ContextTypeMatchClassLoader}
  * <p>
  * TODO: ContextTypeMatchClassLoader用于{@link LoadTimeWeaver}AOP类加载期间织入、
+ * 有关 load-time-weaver 的对象简单标注：
+ * 1、{@link org.springframework.context.config.LoadTimeWeaverBeanDefinitionParser}
+ * 2、{@link LoadTimeWeaverAwareProcessor,LoadTimeWeaverAware,LoadTimeWeavingConfiguration,LoadTimeWeavingConfigurer,DefaultContextLoadTimeWeaver}
+ * <p>
+ * 在{@link LoadTimeWeavingConfiguration#loadTimeWeaver()}中注入Bean对象{@link LoadTimeWeaver}时,
+ * 先判断是否有自定义的{@link LoadTimeWeavingConfigurer}、否则使用{@link DefaultContextLoadTimeWeaver}。
+ *
  * <p>
  * Class.forName()和ClassLoader.loadClass()的区别：
  * 1、Class.forName(name)：会初始化类。(类要创建实例需要先加载并初始化该类、即静态成员变量和静态代码块的初始化)
@@ -72,6 +84,6 @@ public class SpringClassLoader {
         Class<?> nonExcludeThreadLoadClass = threadLoader.loadClass(IProperties.class.getName());
         Class<?> nonExcludeOverridingLoadClass = overridingLoader.loadClass(IProperties.class.getName());
         // false、
-        System.out.println("nonExcludeThreadLoadClass==nonExcludeOverridingLoadClass = " + (nonExcludeThreadLoadClass==nonExcludeOverridingLoadClass));
+        System.out.println("nonExcludeThreadLoadClass==nonExcludeOverridingLoadClass = " + (nonExcludeThreadLoadClass == nonExcludeOverridingLoadClass));
     }
 }
