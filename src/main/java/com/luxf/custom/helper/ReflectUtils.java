@@ -32,6 +32,11 @@ public class ReflectUtils {
         return null;
     }
 
+    public static <V> V getFieldValue(Object target, String fieldName) {
+        Field field = findField(target.getClass(), fieldName);
+        return getFieldValue(target, field);
+    }
+
     @SuppressWarnings("unchecked")
     public static <V> V getFieldValue(Object target, Field field) {
         boolean accessible = field.isAccessible();
