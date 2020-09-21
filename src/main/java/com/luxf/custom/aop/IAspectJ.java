@@ -1,6 +1,7 @@
 package com.luxf.custom.aop;
 
 import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.springframework.aop.Advisor;
@@ -16,6 +17,7 @@ import org.springframework.aop.framework.*;
 import org.springframework.aop.framework.adapter.AdvisorAdapter;
 import org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator;
 import org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator;
+import org.springframework.aop.framework.autoproxy.InfrastructureAdvisorAutoProxyCreator;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.aop.target.SingletonTargetSource;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -284,4 +286,19 @@ public class IAspectJ {
         System.out.println("result = " + result);
         return result;
     }
+
+    /**
+     * {@link EnableAspectJAutoProxy}和其他的{@link Transactional,Async}等自动代理的入口不同.
+     *
+     * {@link EnableAspectJAutoProxy}：通过{@link AspectJAutoProxyRegistrar}注册{@link AnnotationAwareAspectJAutoProxyCreator}自动代理创建器
+     * {@link Transactional,Async}：通过{@link AutoProxyRegistrar}注册{@link InfrastructureAdvisorAutoProxyCreator}自动代理创建器
+     *
+     * 处理{@link Transactional}的核心{@link TransactionInterceptor#invoke(MethodInvocation)} 在拦截器链执行过程中被调用.
+     */
+
+    /**
+     * CGLIB和JDK代理拦截器链调用过程的核心代码：
+     * @see CglibAopProxy.DynamicAdvisedInterceptor#intercept(Object, Method, Object[], MethodProxy), 内部的{@link CglibAopProxy.CglibMethodInvocation#proceed()}
+     * @see JdkDynamicAopProxy#invoke(Object, Method, Object[]) 内部的 {@link ReflectiveMethodInvocation#proceed()}
+     */
 }
