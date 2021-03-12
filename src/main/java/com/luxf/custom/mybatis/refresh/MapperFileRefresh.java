@@ -3,8 +3,10 @@ package com.luxf.custom.mybatis.refresh;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.builder.xml.XMLMapperBuilder;
 import org.apache.ibatis.executor.ErrorContext;
+import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
+import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.boot.autoconfigure.MybatisProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +29,19 @@ import java.util.concurrent.TimeUnit;
 /**
  * 修改mapper.xml后, 刷新mybatis的StrictMap相关内容、不用重启项目。
  *
+ * 如果是用于mybatis-plus的项目, 由于plus自带的MybatisConfiguration重写了{@link Configuration#addMappedStatement(MappedStatement)},
+ * 导致不会执行{@link StrictMap#put(String, Object)}方法, 引起刷新功能不生效.
+ *
+ * 需要自定义Configuration, 覆盖plus自带的MybatisConfiguration##addMappedStatement(MappedStatement)方法,
+ * 并且在MybatisSqlSessionFactoryBean中, 执行setConfiguration()。
+ *
+ * MybatisSqlSessionFactoryBean基本是复制于{@link SqlSessionFactoryBean}, 除了{@link SqlSessionFactoryBean#configuration}不同
+ *
+ * 可以通过 MybatisPlusPropertiesCustomizer#customize(MybatisPlusProperties properties)方法, 直接覆盖掉MybatisConfiguration、
+ *
+ * 可以通过{@link org.springframework.beans.BeanUtils#copyProperties(Object, Object)}, 复制配置好的MybatisConfiguration, 在进行覆盖.
+ *
+ * TODO: JRebel mybatisPlus extend 插件可以直接更新xml, 无需启用该代码.
  * @author 小66
  * @date 2020-08-13 11:29
  **/
